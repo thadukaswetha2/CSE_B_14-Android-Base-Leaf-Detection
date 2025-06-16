@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rice Leaf Detector</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #059669;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .upload-btn {
+      background-color: #28a745;
+    }
+
+    .upload-btn:hover {
+      background-color: #218838;
+    }
+
+    .toggle-link {
+      text-align: center;
+      margin-top: 15px;
+      color: #059669;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #imagePreview img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    #predictionResult {
+      display: none;
+      background: #e0f7fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+
+    #predictionResult h3 {
+      margin: 0;
+      color: #00796b;
+    }
+
+    .feedback-btns {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .feedback-btns button {
+      width: 48%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .yes-btn {
+      background-color: #28a745;
+    }
+
+    .no-btn {
+      background-color: #dc3545;
+    }
+
+    #thankYouMessage {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      color: #28a745;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login/Register Section -->
+  <div class="container" id="authSection">
+    <h2 id="form-title">Register</h2>
+
+    <!-- Register Form -->
+    <form id="register-form">
+      <div class="input-group">
+        <label>Name</label>
+        <input type="text" id="reg-name" required />
+      </div>
+      <div class="input-group">
+        <label>Phone</label>
+        <input type="text" id="reg-phone" required />
+      </div>
+      <div class="input-group">
+        <label>Location</label>
+        <input type="text" id="reg-location" required />
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" required />
+      </div>
+      <div class="input-group">
+        <label>Confirm Password</label>
+        <input type="password" id="reg-confirm-password" required />
+      </div>
+      <button type="submit">Register</button>
+    </form>
+
+    <!-- Login Form -->
+    <form id="login-form" class="hidden">
+      <div class="input-group">
+        <label>Name</label>
+        <input type="text" id="login-name" required />
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="login-password" required />
+      </div>
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="toggle-link" onclick="toggleForms()">
+      Already have an account? Login here
+    </div>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="container hidden" id="uploadSection">
+    <h2>Rice Leaf Disease Detector</h2>
+    <p style="text-align:center;">Upload an image of a rice leaf to detect possible diseases.</p>
+
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" />
+    <button class="upload-btn" onclick="document.getElementById('imageInput').click();">Upload Image</button>
+
+    <div id="imagePreview"></div>
+
+    <div id="predictionResult">
+      <h3>Detection Result</h3>
+      <p id="diseaseName"></p>
+      <p id="confidence"></p>
+      <img id="referenceImage" style="max-width:100%; border-radius:5px;" />
+      <div class="feedback-btns">
+        <button class="yes-btn" onclick="submitFeedback(true)">Yes</button>
+        <button class="no-btn" onclick="submitFeedback(false)">No</button>
+      </div>
+    </div>
+
+    <div id="thankYouMessage">Thank you for your feedback!</div>
+  </div>
+
+  <script>
+    // Toggle between login/register
+    const registerForm = document.getElementById('register-form');
+    const loginForm = document.getElementById('login-form');
+    const formTitle = document.getElementById('form-title');
+    const toggleLink = document.querySelector('.toggle-link');
+
+    function toggleForms() {
+      registerForm.classList.toggle('hidden');
+      loginForm.classList.toggle('hidden');
+      formTitle.textContent = loginForm.classList.contains('hidden') ? 'Register' : 'Login';
+      toggleLink.textContent = loginForm.classList.contains('hidden') ? 'Already have an account? Login here' : 'Don\'t have an account? Register here';
+    }
+
+    // Auth navigation
+    const authSection = document.getElementById('authSection');
+    const uploadSection = document.getElementById('uploadSection');
+
+    registerForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const pass = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm-password').value;
+
+      if (pass !== confirm) {
+        alert("Passwords do not match.");
+        return;
+      }
+
+      alert("Registration successful!");
+      authSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+    });
+
+    loginForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      alert("Login successful!");
+      authSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+    });
+
+    // Image Prediction Logic
+    const diseases = [
+      { name: 'Brown Spot', image: 'brown_spot_1.jpg', confidence: 0.91 },
+      { name: 'Hispa', image: 'hispa_2.jpg', confidence: 0.87 },
+      { name: 'Leaf Blast', image: 'leaf_blast_3.jpg', confidence: 0.89 },
+      { name: 'Bacterial Leaf Streak', image: 'bacterial_leaf_streak_4.jpg', confidence: 0.85 },
+      { name: 'Healthy Leaf', image: 'healthy_leaf_5.jpg', confidence: 0.97 }
+    ];
+
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const predictionResult = document.getElementById('predictionResult');
+    const diseaseName = document.getElementById('diseaseName');
+    const confidence = document.getElementById('confidence');
+    const referenceImage = document.getElementById('referenceImage');
+    const thankYouMessage = document.getElementById('thankYouMessage');
+
+    imageInput.addEventListener('change', handleImageUpload);
+
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = 'Uploaded Image';
+          imagePreview.innerHTML = '';
+          imagePreview.appendChild(img);
+          simulatePrediction();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function simulatePrediction() {
+      predictionResult.style.display = 'none';
+      thankYouMessage.style.display = 'none';
+      setTimeout(() => {
+        const prediction = diseases[Math.floor(Math.random() * diseases.length)];
+        diseaseName.textContent = `Disease: ${prediction.name}`;
+        confidence.textContent = `Confidence: ${(prediction.confidence * 100).toFixed(1)}%`;
+        referenceImage.src = prediction.image;
+        referenceImage.alt = prediction.name;
+        predictionResult.style.display = 'block';
+      }, 1000);
+    }
+
+    function submitFeedback(isCorrect) {
+      predictionResult.style.display = 'none';
+      thankYouMessage.style.display = 'block';
+      console.log(`User feedback: ${isCorrect ? 'Correct' : 'Incorrect'} prediction`);
+    }
+  </script>
+</body>
+</html>
